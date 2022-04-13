@@ -1,0 +1,93 @@
+apply plugin: 'com.android.application'
+
+dependencies {
+
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile 'com.android.support:appcompat-v7:26.0.0'
+    compile 'com.android.support:design:26.0.0'
+    compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    compile 'com.android.support:support-compat:26.0.0'
+//    compile 'com.heytap.mcssdk:mcssdk:2.0.3'
+    compile(name: 'com.heytap.msp', ext: 'aar')
+}
+
+static String getLocalTimeString() {
+    return new Date().format("YYMMdd", TimeZone.getTimeZone("GMT+8"))
+}
+
+static String versionCode2VersionName(int versionCode, String propVersionCommit) {
+    String tmp = versionCode.toString()
+    char[] verCodes = tmp.substring(tmp.size() - 3).toCharArray()
+    println("versionCode:" + verCodes)
+    return sprintf("v%s.%s.%s_%s_%s", verCodes[0], verCodes[1], verCodes[2], new Date().format("YYMMdd", TimeZone.getTimeZone("GMT+8")), propVersionCommit)
+}
+
+android {
+    compileSdkVersion 26
+    buildToolsVersion "25.0.3"
+
+    lintOptions {
+        abortOnError false
+    }
+
+    defaultConfig {
+        minSdkVersion 19
+        targetSdkVersion 26
+        versionCode 210
+        versionName versionCode2VersionName(getVersionCode(), "${prop_versionCommit}")
+        applicationId "${prop_appPackage}"
+        resValue "string", "appLabel", 'HeytapPushDemo'
+        manifestPlaceholders = [versionCommit: "${prop_versionCommit}", versionDate: "${prop_versionDate}"]
+        compileOptions {
+            sourceCompatibility JavaVersion.VERSION_1_8
+            targetCompatibility JavaVersion.VERSION_1_8
+        }
+    }
+
+    applicationVariants.all { variant ->
+        if (variant.buildType.name == 'debug') {//使用debug版本进行输出
+            variant.outputs.each { output ->
+//                def file = output.outputFile
+//                output.outputFile = new File(file.parent, file.name.replace("-debug", "").replace(".apk", "-" + getVersionName() + ".apk"))
+//                setVersion(getVersionName())
+//                setStatus(output.outputFile.getAbsolutePath())
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            shrinkResources false
+            debuggable true
+            buildConfigField "String", "appId", "${prop_appID_test}"
+            buildConfigField "String", "appKey", "${prop_appKey_test}"
+            buildConfigField "String", "appSecret", "${prop_appSecret_test}"
+        }
+
+        release {
+            minifyEnabled true
+            shrinkResources false
+            buildConfigField "String", "appId", "${prop_appID}"
+            buildConfigField "String", "appKey", "${prop_appKey}"
+            buildConfigField "String", "appSecret", "${prop_appSecret}"
+        }
+    }
+
+    repositories {
+        flatDir {
+            dirs 'libs'
+        }
+    }
+}
+
+
+build.doLast {//dolast copy file to my dir
+    copy {
+        from getStatus()
+        into "D:\\AutoBuild\\OpushDemo"
+        rename { String.format("OpushDemo_%s.apk", getVersion()) }
+    }
+    println("=============== copy output file to D:\\AutoBuild\\OpushDemo  ===================")
+
+}
